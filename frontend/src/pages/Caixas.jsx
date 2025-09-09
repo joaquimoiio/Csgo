@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { earningsService } from '../services/api';
-import EnhancedEarningsForm from '../components/EnhancedEarningsForm';
-import { BoxIcon, SteamIcon, MarketIcon } from '../components/Icons';
+import SimpleEarningsForm from '../components/SimpleEarningsForm';
+import { BoxIcon, SteamIcon, MarketIcon, DeleteIcon } from '../components/Icons';
 
 const Caixas = () => {
   const [earnings, setEarnings] = useState([]);
@@ -13,15 +13,19 @@ const Caixas = () => {
   const loadEarnings = async () => {
     try {
       const response = await earningsService.getByType('caixas');
-      setEarnings(response.data);
-      const totalAmount = response.data.reduce((sum, earning) => sum + (earning.amount || 0), 0);
-      const steamTotalAmount = response.data.reduce((sum, earning) => sum + (earning.steamPrice || 0), 0);
-      const marketTotalAmount = response.data.reduce((sum, earning) => sum + (earning.marketPrice || 0), 0);
+      const caixasData = response.data.data || []; // Acessar response.data.data devido à nova estrutura
+      setEarnings(caixasData);
+      
+      const totalAmount = 0; // Sem campo de ganho no novo formato
+      const steamTotalAmount = caixasData.reduce((sum, earning) => sum + (earning.steamPrice || 0), 0);
+      const marketTotalAmount = caixasData.reduce((sum, earning) => sum + (earning.marketPrice || 0), 0);
+      
       setTotal(totalAmount);
       setSteamTotal(steamTotalAmount);
       setMarketTotal(marketTotalAmount);
     } catch (error) {
       console.error('Erro ao carregar ganhos de caixas:', error);
+      setEarnings([]); // Garantir que earnings seja sempre um array
     } finally {
       setLoading(false);
     }
@@ -68,18 +72,12 @@ const Caixas = () => {
               <BoxIcon className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Caixas do CS</h1>
-              <p className="text-slate-400">Ganhos e retornos de abertura de caixas</p>
+              <h1 className="text-3xl font-bold text-white">Mimos do CS</h1>
+              <p className="text-slate-400">Ganhos do mimo semanal</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-yellow-400 font-medium">Ganhos com Caixas:</span>
-                <span className="text-yellow-400 font-bold text-xl">{formatCurrency(total)}</span>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
               <div className="flex justify-between items-center">
@@ -106,8 +104,8 @@ const Caixas = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-              <h3 className="text-xl font-bold mb-4 text-yellow-400">Adicionar Ganho de Caixa</h3>
-              <EnhancedEarningsForm 
+              <h3 className="text-xl font-bold mb-4 text-yellow-400">Adicionar Caixa/Item</h3>
+              <SimpleEarningsForm 
                 onEarningAdded={loadEarnings}
                 defaultType="caixas"
               />
@@ -139,29 +137,19 @@ const Caixas = () => {
                         {earning.name && (
                           <span className="text-white font-semibold">{earning.name}</span>
                         )}
-                        {earning.amount > 0 && (
-                          <span className="text-yellow-400 font-bold">
-                            +{formatCurrency(earning.amount)}
-                          </span>
-                        )}
                       </div>
                       
-                      {(earning.steamPrice > 0 || earning.marketPrice > 0) && (
-                        <div className="flex gap-4 text-sm mb-1">
-                          {earning.steamPrice > 0 && (
-                            <div className="flex items-center gap-1">
-                              <SteamIcon className="w-4 h-4 text-blue-400" />
-                              <span className="text-blue-400">{formatCurrency(earning.steamPrice)}</span>
-                            </div>
-                          )}
-                          {earning.marketPrice > 0 && (
-                            <div className="flex items-center gap-1">
-                              <MarketIcon className="w-4 h-4 text-orange-400" />
-                              <span className="text-orange-400">{formatCurrency(earning.marketPrice)}</span>
-                            </div>
-                          )}
+                      {/* Sempre mostrar preços Steam e Mercado */}
+                      <div className="flex gap-4 text-sm mb-1">
+                        <div className="flex items-center gap-1">
+                          <SteamIcon className="w-4 h-4 text-blue-400" />
+                          <span className="text-blue-400">{formatCurrency(earning.steamPrice || 0)}</span>
                         </div>
-                      )}
+                        <div className="flex items-center gap-1">
+                          <MarketIcon className="w-4 h-4 text-orange-400" />
+                          <span className="text-orange-400">{formatCurrency(earning.marketPrice || 0)}</span>
+                        </div>
+                      </div>
                       
                       {earning.description && (
                         <p className="text-slate-300 text-sm mb-1">{earning.description}</p>

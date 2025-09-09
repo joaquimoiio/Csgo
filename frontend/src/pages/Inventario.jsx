@@ -19,9 +19,11 @@ const Inventario = () => {
   const loadItems = async () => {
     try {
       const response = await earningsService.getByType('inventory');
-      setItems(response.data);
+      const inventoryData = response.data.data || []; // Acessar response.data.data devido à nova estrutura
+      setItems(inventoryData);
     } catch (error) {
       console.error('Erro ao carregar inventário:', error);
+      setItems([]); // Garantir que items seja sempre um array
     } finally {
       setLoading(false);
     }
@@ -42,9 +44,11 @@ const Inventario = () => {
       };
 
       if (editingItem) {
-        await earningsService.update(editingItem.id, itemData);
+        // Para edição, vamos usar delete + add como workaround já que não há update
+        await earningsService.delete(editingItem.id);
+        await earningsService.add(itemData);
       } else {
-        await earningsService.create(itemData);
+        await earningsService.add(itemData);
       }
       
       resetForm();

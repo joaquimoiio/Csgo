@@ -26,15 +26,22 @@ const EarningsChart = ({ refresh }) => {
     loadTotals();
   }, [refresh]);
 
-  const barData = [
-    { name: 'CS:GO Skins', value: totals.csgoskins, color: '#10b981' },
-    { name: 'Caixas', value: totals.caixas, color: '#f59e0b' },
-    { name: 'Investimentos', value: totals.investimentos, color: '#3b82f6' },
+  const steamData = [
+    { name: 'CS:GO Skins', value: totals.csgoskins?.steam || 0, color: '#10b981' },
+    { name: 'Caixas', value: totals.caixas?.steam || 0, color: '#f59e0b' },
+    { name: 'Inventory', value: totals.inventory?.steam || 0, color: '#8b5cf6' },
   ];
 
-  const pieData = barData.filter(item => item.value > 0);
+  const marketData = [
+    { name: 'CS:GO Skins', value: totals.csgoskins?.market || 0, color: '#10b981' },
+    { name: 'Caixas', value: totals.caixas?.market || 0, color: '#f59e0b' },
+    { name: 'Inventory', value: totals.inventory?.market || 0, color: '#8b5cf6' },
+  ];
 
-  const COLORS = ['#10b981', '#f59e0b', '#3b82f6'];
+  const steamTotal = steamData.reduce((sum, item) => sum + item.value, 0);
+  const marketTotal = marketData.reduce((sum, item) => sum + item.value, 0);
+
+  const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -64,12 +71,12 @@ const EarningsChart = ({ refresh }) => {
     );
   }
 
-  if (totals.total === 0) {
+  if (steamTotal === 0 && marketTotal === 0) {
     return (
       <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-        <h3 className="text-xl font-bold mb-4 text-cs-orange">Gráfico de Ganhos</h3>
+        <h3 className="text-xl font-bold mb-4 text-cs-orange">Gráficos de Valores</h3>
         <div className="h-64 flex items-center justify-center text-slate-400">
-          <p>Nenhum ganho registrado ainda</p>
+          <p>Nenhum valor registrado ainda</p>
         </div>
       </div>
     );
@@ -77,67 +84,106 @@ const EarningsChart = ({ refresh }) => {
 
   return (
     <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4 text-cs-orange">Gráfico de Ganhos</h3>
+      <h3 className="text-xl font-bold mb-4 text-cs-orange">Gráficos de Valores</h3>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Barras */}
+        {/* Gráfico Steam */}
         <div>
-          <h4 className="text-lg font-medium mb-3 text-white">Ganhos por Categoria</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fill: '#cbd5e1', fontSize: 12 }}
-                stroke="#64748b"
-              />
-              <YAxis 
-                tick={{ fill: '#cbd5e1', fontSize: 12 }}
-                stroke="#64748b"
-                tickFormatter={(value) => `R$ ${value}`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" fill="#FF6600" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h4 className="text-lg font-medium mb-3 text-white flex items-center gap-2">
+            <span className="text-blue-400">💨</span>
+            Valores Steam
+            <span className="text-sm text-slate-400">
+              (R$ {new Intl.NumberFormat('pt-BR').format(steamTotal)})
+            </span>
+          </h4>
+          {steamTotal > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={steamData.filter(item => item.value > 0)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fill: '#cbd5e1', fontSize: 12 }}
+                  stroke="#64748b"
+                />
+                <YAxis 
+                  tick={{ fill: '#cbd5e1', fontSize: 12 }}
+                  stroke="#64748b"
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-slate-400 border border-slate-600 rounded">
+              <p>Nenhum valor Steam registrado</p>
+            </div>
+          )}
         </div>
 
-        {/* Gráfico de Pizza */}
+        {/* Gráfico Mercado */}
         <div>
-          <h4 className="text-lg font-medium mb-3 text-white">Distribuição (%)</h4>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value) => [
-                  new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(value),
-                  'Valor'
-                ]}
-                contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <h4 className="text-lg font-medium mb-3 text-white flex items-center gap-2">
+            <span className="text-green-400">🏪</span>
+            Valores Mercado
+            <span className="text-sm text-slate-400">
+              (R$ {new Intl.NumberFormat('pt-BR').format(marketTotal)})
+            </span>
+          </h4>
+          {marketTotal > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={marketData.filter(item => item.value > 0)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fill: '#cbd5e1', fontSize: 12 }}
+                  stroke="#64748b"
+                />
+                <YAxis 
+                  tick={{ fill: '#cbd5e1', fontSize: 12 }}
+                  stroke="#64748b"
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-slate-400 border border-slate-600 rounded">
+              <p>Nenhum valor Mercado registrado</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Resumo Total */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-slate-700/50 p-4 rounded-lg border border-blue-500/30">
+          <div className="text-center">
+            <div className="text-blue-400 text-2xl mb-1">💨</div>
+            <div className="text-white font-medium">Steam Total</div>
+            <div className="text-blue-400 text-xl font-bold">
+              R$ {new Intl.NumberFormat('pt-BR').format(steamTotal)}
+            </div>
+          </div>
+        </div>
+        <div className="bg-slate-700/50 p-4 rounded-lg border border-green-500/30">
+          <div className="text-center">
+            <div className="text-green-400 text-2xl mb-1">🏪</div>
+            <div className="text-white font-medium">Mercado Total</div>
+            <div className="text-green-400 text-xl font-bold">
+              R$ {new Intl.NumberFormat('pt-BR').format(marketTotal)}
+            </div>
+          </div>
+        </div>
+        <div className="bg-slate-700/50 p-4 rounded-lg border border-cs-orange/30">
+          <div className="text-center">
+            <div className="text-cs-orange text-2xl mb-1">💰</div>
+            <div className="text-white font-medium">Total Geral</div>
+            <div className="text-cs-orange text-xl font-bold">
+              R$ {new Intl.NumberFormat('pt-BR').format(steamTotal + marketTotal)}
+            </div>
+          </div>
         </div>
       </div>
     </div>
