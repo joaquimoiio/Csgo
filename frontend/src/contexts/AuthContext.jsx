@@ -29,8 +29,11 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      console.log('Verificando token salvo:', token.substring(0, 20) + '...');
+      
       // Verificar se o token ainda é válido
       const userData = await authService.verifyToken();
+      console.log('Token válido, usuário autenticado:', userData.user.username);
       setUser(userData.user);
     } catch (error) {
       console.error('Erro na verificação de autenticação:', error);

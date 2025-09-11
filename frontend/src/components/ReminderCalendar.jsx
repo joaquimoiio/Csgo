@@ -95,12 +95,18 @@ const ReminderCalendar = () => {
       const dateStr = getDateString(date);
       const isCompleted = completedTasks[`${taskType}_${dateStr}`] || false;
       
-      await tasksService.markTask(taskType, dateStr);
+      console.log(`Alternando tarefa ${taskType} para data ${dateStr}. Estado atual: ${isCompleted}`);
       
+      const result = await tasksService.markTask(taskType, dateStr);
+      console.log('Resposta da API:', result);
+      
+      // Atualizar estado local com o valor retornado pela API
       setCompletedTasks(prev => ({
         ...prev,
-        [`${taskType}_${dateStr}`]: !isCompleted
+        [`${taskType}_${dateStr}`]: result.completed
       }));
+      
+      console.log(`Estado atualizado para: ${result.completed}`);
     } catch (error) {
       console.error('Erro ao alternar tarefa:', error);
     }

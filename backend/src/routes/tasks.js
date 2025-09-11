@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const userId = req.user.id;
-    const { taskType, taskDate } = req.body;
+    const { taskType, taskDate, completed = true } = req.body;
     
     if (!taskType || !taskDate) {
       return res.status(400).json({ error: 'Tipo de tarefa e data são obrigatórios' });
@@ -52,16 +52,36 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Tipo de tarefa inválido' });
     }
     
-    const query = `
-      INSERT INTO user_tasks (user_id, task_type, task_date, completed) 
-      VALUES ($1, $2, $3, $4) 
-      ON CONFLICT (user_id, task_type, task_date) 
-      DO UPDATE SET completed = $4, completed_at = CASE WHEN $4 THEN NOW() ELSE NULL END
-      RETURNING *
-    `;
+    // Primeiro verificar se já existe
+    const existingQuery = 'SELECT * FROM user_tasks WHERE user_id = $1 AND task_type = $2 AND task_date = $3';
+    const existingResult = await db.query(existingQuery, [userId, taskType, taskDate]);
     
-    const result = await db.query(query, [userId, taskType, taskDate, true]);
-    const task = result.rows[0];
+    let query, values, task;
+    
+    if (existingResult.rows.length > 0) {
+      // Atualizar registro existente - alternar estado
+      const currentCompleted = existingResult.rows[0].completed;
+      const newCompleted = !currentCompleted;
+      
+      query = `
+        UPDATE user_tasks 
+        SET completed = $1, completed_at = CASE WHEN $1 THEN NOW() ELSE NULL END
+        WHERE user_id = $2 AND task_type = $3 AND task_date = $4
+        RETURNING *
+      `;
+      values = [newCompleted, userId, taskType, taskDate];
+    } else {
+      // Criar novo registro
+      query = `
+        INSERT INTO user_tasks (user_id, task_type, task_date, completed, completed_at) 
+        VALUES ($1, $2, $3, $4, CASE WHEN $4 THEN NOW() ELSE NULL END)
+        RETURNING *
+      `;
+      values = [userId, taskType, taskDate, completed];
+    }
+    
+    const result = await db.query(query, values);
+    task = result.rows[0];
     
     res.json({
       id: task.id,
@@ -69,11 +89,11 @@ router.post('/', async (req, res) => {
       taskDate: task.task_date,
       completed: task.completed,
       completedAt: task.completed_at,
-      message: 'Tarefa marcada como concluída'
+      message: task.completed ? 'Tarefa marcada como concluída' : 'Tarefa desmarcada'
     });
   } catch (error) {
-    console.error('Erro ao marcar tarefa:', error);
-    res.status(500).json({ error: 'Erro ao marcar tarefa' });
+    console.error('Erro ao processar tarefa:', error);
+    res.status(500).json({ error: 'Erro ao processar tarefa' });
   }
 });
 

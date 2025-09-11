@@ -30,10 +30,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token inválido ou expirado
       localStorage.removeItem('authToken');
-      // Redirecionar para login se não estiver já na página de login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      // Forçar reload para reativar o fluxo de autenticação
+      window.location.reload();
     }
     return Promise.reject(error);
   }

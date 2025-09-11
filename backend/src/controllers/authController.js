@@ -8,10 +8,10 @@ const {
   revokeAllUserSessions 
 } = require('../middleware/auth');
 
-// Rate limiting para login
+// Rate limiting para login - Desabilitado para desenvolvimento
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 tentativas por IP
+  max: 1000, // máximo alto para desenvolvimento
   message: {
     error: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
     code: 'RATE_LIMIT_EXCEEDED'
@@ -20,10 +20,10 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiting para registro
+// Rate limiting para registro - Desabilitado para desenvolvimento
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // máximo 3 registros por IP por hora
+  max: 100, // máximo alto para desenvolvimento
   message: {
     error: 'Muitas tentativas de registro. Tente novamente em 1 hora.',
     code: 'REGISTER_LIMIT_EXCEEDED'

@@ -12,10 +12,10 @@ const { authenticateToken } = require('./src/middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Rate limiting global
+// Rate limiting global - Desabilitado para desenvolvimento
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por IP por 15 minutos
+  max: 10000, // máximo muito alto para desenvolvimento
   message: {
     error: 'Muitas solicitações. Tente novamente em 15 minutos.',
     code: 'RATE_LIMIT_GLOBAL'
